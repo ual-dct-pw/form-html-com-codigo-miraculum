@@ -71,6 +71,9 @@ div {
 	// utilizar a variável formFeedback para indicar os erros
 		console.log("sadfsad");
 		var cc=document.getElementById("cc").value;
+		var nif=document.getElementById("nif").value;
+		var data=document.getElementById("bday").value;
+		
 		if (isNaN(cc) || cc.length < 8 || cc.length > 8) {
 			document.getElementById("formFeedback").style.color = "red";
 			document.getElementById("formFeedback").innerHTML = "Erro: número de CC inválido!";
@@ -79,18 +82,59 @@ div {
 			
 			return false;
 		}
+		
+		else if (validateNIF(nif) == 0){
+			document.getElementById("formFeedback").style.color = "red";
+			document.getElementById("formFeedback").innerHTML = "Erro: número do NIF inválido!";
+			document.getElementById("nif").focus();
+			}
+			
+		else if (getAge(data) < 18) {
+			document.getElementById("formFeedback").style.color = "red";
+			document.getElementById("formFeedback").innerHTML = "Erro: Inferior a 18 anos";
+			}
+			
 		else {
 			
 			// colocar aqui o alert com todos os dados inseridos e validados
 			document.getElementById("formFeedback").style.color = "green";
 			document.getElementById("formFeedback").innerHTML = "Ok!";
 		}
+		
+		
+		
+		
 		return false;
 		//return true;
 		
 		
 		
 	}
+	
+	function validateNIF(nif)
+{
+    if(!['1', '2', '3', '5', '6', '8'].includes(nif.substr(0,1)) && 
+       !['45', '70', '71', '72', '77', '79', '90', '91', '98', '99'].includes(nif.substr(0,2)))
+        return false;
+
+    let total = nif[0] * 9 + nif[1] * 8 + nif[2] * 7 + nif[3] * 6 + nif[4] * 5 + nif[5] * 4 + nif[6] * 3 + nif[7] * 2;
+
+    let modulo11 = total - parseInt(total / 11) * 11;
+    let comparador = modulo11 == 1 || modulo11 == 0 ? 0 : 11 - modulo11;
+
+    return nif[8] == comparador;
+}
+	
+	function getAge(dateString) {
+		var today = new Date();
+		var birthDate = new Date(dateString);
+		var age = today.getFullYear() - birthDate.getFullYear();
+		var m = today.getMonth() - birthDate.getMonth();
+		if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+			age--;
+		}
+		return age;
+		}
 	
 	function callSecurityAPI() {
 		// Em primeiro lugar, vamos obter o IP da nossa máquina
@@ -119,6 +163,14 @@ div {
 		var urlToCall ="https://ipapi.co/" + ipClient + "/json/";
 		xhttp2.open("GET", urlToCall, true);
 		xhttp2.send();
+		
+		if(navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                document.getElementById("longitude").innerHTML = position.coords.longitude;
+            });
+        } else {
+            alert("Sorry, your browser does not support HTML5 geolocation.");
+        }
 	}
 
 	function callThinkingAPI() {
@@ -136,7 +188,28 @@ div {
 		xhttp.send();
 	}
 	
+	function lonlat() {
+	
+		var input = document.getElementById('cp');	
+		var lon = document.getElementById('longitude');
+		var lat = document.getElementById('latitude');
+		
+		if (event.keyCode === 13 && input.value.length === 5) {
+
+			var zipCode = input.value;
+
+			var xhr = $.get('https://maps.googleapis.com/maps/api/geocode/json?address=' + zipCode + '&key=AIzaSyDVPLLlJAQ679Frd0gu11khJ9mW02wsvWQ');
+
+			xhr.done(function(data) {
+				lon.innerHTML = 'Longitude = ' + data.results[0].geometry.location.lng;
+				lat.innerHTML = 'Latitude = ' + data.results[0].geometry.location.lat;
+			});
+
+	} 
+}
+	
 </script>
+
 <body onload="callSecurityAPI()">
 
 <h3>Uso de CSS para formatar estilos num Form HTML</h3>
@@ -144,13 +217,13 @@ div {
 <div>
   <form action="/action_page.php" onsubmit="return validateForm()" method="post">
     <label for="name">Nome</label>
-    <input type="text" id="name" name="username" placeholder="Seu nome..." required oninvalid="this.setCustomValidity('Preencha o campo...')" ><br>
+    <input type="text" id="name" name="username" placeholder="Seu nome..." required oninvalid="this.setCustomValidity('Preencha o campo...')" oninput="setCustomValidity('')" ><br>
 
     <label for="bday">Data de Nascimento</label>
-    <input type="date" id="bday" name="userbday" required oninvalid="this.setCustomValidity('Preencha o campo...')" /><br><br>
+    <input type="date" id="bday" name="userbday" required oninvalid="this.setCustomValidity('Preencha o campo...')" oninput="setCustomValidity('')" /><br><br>
 
     <label for="nif">NIF</label>
-    <input type="text" id="nif" name="usernif" placeholder="Seu NIF..." required oninvalid="this.setCustomValidity('Preencha o campo...')" ><br>
+    <input type="text" id="nif" name="usernif" placeholder="Seu NIF..." required oninvalid="this.setCustomValidity('???...')" oninput="setCustomValidity('')"><br>
 	
 	<label for="cc">CC</label>
     <input type="text" id="cc" name="usercc" placeholder="Seu CC..."><br>
@@ -159,7 +232,7 @@ div {
     <input type="text" id="address" name="useraddress" placeholder="Sua morada..."><br>
 	
 	<label for="cp">C&oacute;digo Postal</label>
-    <input type="text" id="cp" name="usercp" placeholder="Seu c&oacute;digo postal..."><br>
+    <input type="text" id="cp" name="usercp" placeholder="Seu c&oacute;digo postal..." onkeydown="lonlat()" ><br>
 	
 	<label for="city">Cidade</label>
     <input type="text" id="city" name="usercity" placeholder="Sua cidade..."><br>
@@ -167,11 +240,11 @@ div {
 	<label for="latitude">Latitute</label>
     <input type="text" id="latitude" name="userlatitude"><br>
 	
-	<label for="latitude">Longitude</label>
+	<label for="longitude">Longitude</label>
     <input type="text" id="longitude" name="userlongitude"><br>
 	
 	<label for="email">Email</label>
-    <input type="email" id="email" name="useremail" placeholder="Seu email..." required  oninvalid="this.setCustomValidity('Preencha o campo...')" ><br>
+    <input type="email" id="email" name="useremail" placeholder="Seu email..."  required  oninvalid="this.setCustomValidity('Preencha o campo...')" oninput="setCustomValidity('')" input type="email"><br>
 	
 	<label for="mobile">Telemóvel</label>
     <input type="text" id="mobile" name="usermobile" placeholder="Seu telemóvel..."><br>
